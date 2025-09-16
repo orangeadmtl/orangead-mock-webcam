@@ -10,10 +10,12 @@ fi
 echo "Starting RTSP stream at rtsp://localhost:8554/webcam"
 
 # Start MediaMTX
-./mediamtx setup &
+./mediamtx &
 
 # Wait for MediaMTX to start
-sleep 2
+while ! nc -z localhost 8554; do   
+  sleep 0.1
+done
 
 # Start video stream
 ffmpeg -re -stream_loop -1 -i sample.mp4 -c copy -f rtsp rtsp://localhost:8554/webcam -loglevel quiet
