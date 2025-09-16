@@ -8,6 +8,7 @@ fi
 
 # Simple RTSP feed script
 echo "Starting RTSP stream at rtsp://localhost:8554/webcam"
+echo "run: mpv rtsp://localhost:8554/webcam"
 
 # Start MediaMTX
 ./mediamtx &
