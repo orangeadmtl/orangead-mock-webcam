@@ -5,10 +5,11 @@ set -e
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
-echo -e "${GREEN}MediaMTX Setup Script${NC}"
-echo "Downloading latest MediaMTX release..."
+echo -e "${GREEN}OrangeAd Mock Webcam Setup Script${NC}"
+echo -e "${BLUE}Setting up MediaMTX and dependencies...${NC}"
 
 # Detect OS and architecture
 OS=$(uname -s | tr '[:upper:]' '[:lower:]')
@@ -51,6 +52,48 @@ case "$OS" in
 esac
 
 echo "Detected OS: $OS, Architecture: $ARCH"
+
+# macOS-specific dependency management
+if [ "$OS" = "darwin" ]; then
+    echo -e "${BLUE}Setting up macOS dependencies...${NC}"
+
+    # Check for Homebrew installation
+    if ! command -v brew >/dev/null 2>&1; then
+        echo -e "${YELLOW}Homebrew not found. Installing Homebrew...${NC}"
+        /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+        # Add Homebrew to PATH for Apple Silicon Macs
+        if [[ "$ARCH" == "arm64" ]]; then
+            echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >> ~/.zprofile
+            eval "$(/opt/homebrew/bin/brew shellenv)"
+        else
+            echo 'eval "$(/usr/local/bin/brew shellenv)"' >> ~/.zprofile
+            eval "$(/usr/local/bin/brew shellenv)"
+        fi
+    else
+        echo -e "${GREEN}Homebrew found: $(brew --version | head -1)${NC}"
+    fi
+
+    # Install ffmpeg if not present
+    if ! command -v ffmpeg >/dev/null 2>&1; then
+        echo -e "${YELLOW}FFmpeg not found. Installing via Homebrew...${NC}"
+        brew install ffmpeg
+        echo -e "${GREEN}FFmpeg installed successfully${NC}"
+    else
+        echo -e "${GREEN}FFmpeg found: $(ffmpeg -version | head -1 | cut -d' ' -f3)${NC}"
+    fi
+
+    # Install netcat if not present (used for port checking)
+    if ! command -v nc >/dev/null 2>&1; then
+        echo -e "${YELLOW}Netcat not found. Installing via Homebrew...${NC}"
+        brew install netcat
+        echo -e "${GREEN}Netcat installed successfully${NC}"
+    else
+        echo -e "${GREEN}Netcat found${NC}"
+    fi
+
+    echo -e "${GREEN}macOS dependencies setup complete${NC}"
+fi
 
 # Get latest release info from GitHub API
 echo "Fetching latest release information..."
@@ -107,12 +150,24 @@ else
     exit 1
 fi
 
-echo -e "${GREEN}Success!${NC} MediaMTX $VERSION has been installed to current directory"
-echo "To run MediaMTX: ./mediamtx"
+echo -e "${GREEN}Setup Complete!${NC}"
+echo -e "${GREEN}✓ MediaMTX $VERSION installed${NC}"
+if [ "$OS" = "darwin" ]; then
+    echo -e "${GREEN}✓ macOS dependencies configured${NC}"
+    echo -e "${GREEN}✓ FFmpeg available${NC}"
+    echo -e "${GREEN}✓ Netcat available${NC}"
+fi
 
-# Check if config file exists  
-if [ -f "setup" ]; then
-    echo -e "${YELLOW}Configuration file found: setup${NC}"
+echo ""
+echo -e "${BLUE}Usage:${NC}"
+echo "  Start mock webcam: ./start.sh"
+echo "  Stop services:     ./stop.sh"
+echo "  RTSP stream URL:   rtsp://localhost:8554/webcam"
+echo "  Test with:         mpv rtsp://localhost:8554/webcam"
+
+# Check if config file exists
+if [ -f "mediamtx.yml" ]; then
+    echo -e "${YELLOW}Configuration file: mediamtx.yml${NC}"
 else
-    echo -e "${YELLOW}No configuration file found. MediaMTX will use default settings.${NC}"
+    echo -e "${YELLOW}MediaMTX will use default settings${NC}"
 fi
