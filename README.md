@@ -4,8 +4,10 @@ A mock webcam service using MediaMTX and FFmpeg to provide RTSP video streaming 
 
 ## Features
 
-- **Automatic Dependency Management**: Installs required dependencies on macOS (Homebrew, FFmpeg, netcat)
+- **Dual-Output Architecture**: Supports both RTSP streaming and local frame generation for optimal AI detection
 - **RTSP Streaming**: Streams a sample video on `rtsp://localhost:8554/webcam`
+- **Local Frame Generation**: Creates WebP frames in `/tmp/webcam/` for low-latency AI detection
+- **Automatic Dependency Management**: Installs required dependencies on macOS (Homebrew, FFmpeg, netcat)
 - **Robust Service Management**: Proper startup, shutdown, and error handling
 - **Cross-Platform**: Supports Linux and macOS (with enhanced macOS support)
 
@@ -22,8 +24,15 @@ This will:
 - Verify all dependencies
 
 ### 2. Start Service
+
+**Standard Mode (RTSP Only)**:
 ```bash
 ./start.sh
+```
+
+**Dual-Output Mode (RTSP + Local Frames)**:
+```bash
+./start-dual.sh
 ```
 
 ### 3. Stop Service
@@ -47,11 +56,22 @@ ffplay rtsp://localhost:8554/webcam
 
 ### Integration with oaTracker
 
-Configure oaTracker to use the mock webcam by setting the video source in `config.yaml`:
-
+**For Standard Mode (RTSP)**:
+Configure oaTracker to use the RTSP stream:
 ```yaml
 default_yolo_source: "rtsp://localhost:8554/webcam"
 ```
+
+**For Dual-Output Mode (Recommended)**:
+Configure oaTracker to use local frames for optimal performance:
+```yaml
+default_yolo_source: "/tmp/webcam/"
+```
+
+The dual-output mode provides:
+- **<100ms latency** for AI detection via local frames
+- **Live RTSP stream** for viewing and recording
+- **Automatic frame cleanup** to prevent disk space issues
 
 ## Requirements
 

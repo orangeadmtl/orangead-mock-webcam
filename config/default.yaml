@@ -1,0 +1,30 @@
+# Mock Webcam Universal Configuration
+# Simple dual-pipeline configuration for testing
+
+# RTSP stream output
+rtsp:
+  port: 8554                          # Standard RTSP port
+  stream_name: "webcam"               # Stream name: rtsp://localhost:8554/webcam
+
+# Frame output for AI detection
+frames:
+  directory: "/tmp/webcam"            # Output directory for AI frames
+  fps: 5                              # 5 FPS optimal for AI detection
+  format: "webp"                      # WebP for better compression
+  quality: 95                         # High quality for accurate detection
+  pattern: "img_%06d.webp"            # Frame naming pattern (matches oaCamBridge)
+
+# Video source settings
+video:
+  source: "sample.mp4"                # Input video file
+  loop: true                          # Loop video continuously
+
+# FFmpeg encoding settings
+ffmpeg:
+  preset: "ultrafast"                 # Low latency for live streaming
+  log_level: "error"                  # Quiet operation
+
+# Notes:
+# - Works with both start.sh (RTSP only) and start-dual.sh (RTSP + frames)
+# - Frame output compatible with oaTracker and oaCamBridge
+# - Simple configuration works for all testing scenarios
