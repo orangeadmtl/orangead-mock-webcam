@@ -15,13 +15,16 @@ echo -e "${GREEN}OrangeAd Mock Webcam - Dual Output Mode${NC}"
 echo -e "${BLUE}Architecture: Video → FFmpeg → [RTSP Stream + Detection Frames]${NC}"
 
 # Configuration
+CAMERA_INDEX=${CAMERA_INDEX:-"sample.mp4"}
 RTSP_PORT=${RTSP_PORT:-8554}
 FRAME_DIR=${FRAME_DIR:-"/tmp/webcam"}
 FRAME_FPS=${FRAME_FPS:-5}
 STREAM_NAME=${STREAM_NAME:-"webcam"}
 FRAME_QUALITY=${FRAME_QUALITY:-95}
+INPUT_FPS=${INPUT_FPS:-30.000030}
 
 echo -e "${BLUE}Configuration:${NC}"
+echo -e "  Input: $CAMERA_INDEX"
 echo -e "  RTSP Stream: rtsp://localhost:${RTSP_PORT}/${STREAM_NAME}"
 echo -e "  Frame Output: $FRAME_DIR (${FRAME_FPS} FPS)"
 echo -e "  Frame Quality: $FRAME_QUALITY"
@@ -32,10 +35,19 @@ if [ ! -f "./mediamtx" ]; then
     exit 1
 fi
 
-# Check for sample video
-if [ ! -f "./sample.mp4" ]; then
-    echo -e "${RED}Error: sample.mp4 not found.${NC}"
-    exit 1
+# Check input source
+if [[ -f "$CAMERA_INDEX" ]]; then
+    # Video file - check if it exists
+    if [ ! -f "$CAMERA_INDEX" ]; then
+        echo -e "${RED}Error: Video file $CAMERA_INDEX not found.${NC}"
+        exit 1
+    fi
+else
+    # Camera device - check if ffmpeg supports avfoundation
+    if ! ffmpeg -f avfoundation -list_devices true -i "" >/dev/null 2>&1; then
+        echo -e "${RED}Error: Camera device access not available. Check camera permissions.${NC}"
+        exit 1
+    fi
 fi
 
 # Check for ffmpeg
@@ -108,16 +120,27 @@ fi
 
 echo -e "${GREEN}✓ MediaMTX started successfully${NC}"
 
-# Start dual-output video stream
-echo -e "${BLUE}Starting dual-output video stream...${NC}"
+# Start dual-output stream
+echo -e "${BLUE}Starting dual-output stream...${NC}"
 echo -e "${GREEN}RTSP Stream: rtsp://localhost:${RTSP_PORT}/${STREAM_NAME}${NC}"
 echo -e "${GREEN}Detection Frames: ${FRAME_DIR}/${NC}"
 echo -e "${YELLOW}Press Ctrl+C to stop${NC}"
 
-# Start dual-output FFmpeg pipeline - matches colleague's Linux pattern
-# This creates both RTSP stream (for viewing) and local frames (for AI detection)
+# Determine input arguments based on source type
+if [[ -f "$CAMERA_INDEX" ]]; then
+    # Video file input
+    echo -e "${BLUE}Using video file: $CAMERA_INDEX${NC}"
+    INPUT_ARGS="-re -stream_loop -1 -i $CAMERA_INDEX"
+else
+    # Camera device input
+    echo -e "${BLUE}Using camera device: $CAMERA_INDEX${NC}"
+    INPUT_ARGS="-f avfoundation -pixel_format uyvy422 -framerate $INPUT_FPS -i $CAMERA_INDEX"
+fi
+
+# Start dual-output FFmpeg pipeline
+# Creates both RTSP stream (for viewing) and local frames (for AI detection)
 ffmpeg \
-    -re -stream_loop -1 -i sample.mp4 \
+    $INPUT_ARGS \
     -filter_complex "[0:v]split=2[rtsp][img]" \
     -map "[rtsp]" \
         -c:v libx264 \
