@@ -54,6 +54,24 @@ fi
 mkdir -p "$FRAME_DIR"
 echo -e "${GREEN}✓ Frame directory created: $FRAME_DIR${NC}"
 
+# Start background cleanup process to keep only latest 10000 files
+echo -e "${BLUE}Starting background cleanup process...${NC}"
+(
+    while true; do
+        sleep 1
+        if [ -d "$FRAME_DIR" ]; then
+            # Count files and remove oldest if more than 10000
+            file_count=$(find "$FRAME_DIR" -type f -name "*.webp" | wc -l)
+            if [ "$file_count" -gt 10000 ]; then
+                files_to_remove=$((file_count - 10000))
+                find "$FRAME_DIR" -type f -name "*.webp" -printf '%T@ %p\n' | sort -n | head -n "$files_to_remove" | cut -d' ' -f2- | xargs rm -f
+            fi
+        fi
+    done
+) &
+CLEANUP_PID=$!
+echo -e "${GREEN}✓ Background cleanup started (keeping latest 10000 files)${NC}"
+
 # Kill any existing MediaMTX or FFmpeg processes
 pkill -f mediamtx 2>/dev/null || true
 pkill -f ffmpeg 2>/dev/null || true
@@ -66,6 +84,7 @@ MEDIAMTX_PID=$!
 cleanup() {
     echo -e "\n${YELLOW}Shutting down services...${NC}"
     kill $MEDIAMTX_PID 2>/dev/null || true
+    kill $CLEANUP_PID 2>/dev/null || true
     pkill -f ffmpeg 2>/dev/null || true
     pkill -f mediamtx 2>/dev/null || true
     echo -e "${GREEN}Services stopped${NC}"
