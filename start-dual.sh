@@ -14,17 +14,19 @@ NC='\033[0m' # No Color
 echo -e "${GREEN}OrangeAd Mock Webcam - Dual Output Mode${NC}"
 echo -e "${BLUE}Architecture: Video → FFmpeg → [RTSP Stream + Detection Frames]${NC}"
 
-# Configuration
-CAMERA_INDEX=${CAMERA_INDEX:-"sample.mp4"}
+# Configuration - Default to USB camera on Mac
+CAMERA_INDEX=${CAMERA_INDEX:-"0"}
 RTSP_PORT=${RTSP_PORT:-8554}
 FRAME_DIR=${FRAME_DIR:-"/tmp/webcam"}
 FRAME_FPS=${FRAME_FPS:-5}
 STREAM_NAME=${STREAM_NAME:-"webcam"}
 FRAME_QUALITY=${FRAME_QUALITY:-95}
-INPUT_FPS=${INPUT_FPS:-30.000030}
+INPUT_FPS=${INPUT_FPS:-10}
+VIDEO_SIZE=${VIDEO_SIZE:-"1280x720"}
 
 echo -e "${BLUE}Configuration:${NC}"
 echo -e "  Input: $CAMERA_INDEX"
+echo -e "  Resolution: $VIDEO_SIZE @ ${INPUT_FPS}fps"
 echo -e "  RTSP Stream: rtsp://localhost:${RTSP_PORT}/${STREAM_NAME}"
 echo -e "  Frame Output: $FRAME_DIR (${FRAME_FPS} FPS)"
 echo -e "  Frame Quality: $FRAME_QUALITY"
@@ -35,19 +37,11 @@ if [ ! -f "./mediamtx" ]; then
     exit 1
 fi
 
-# Check input source
+# Input source validation
 if [[ -f "$CAMERA_INDEX" ]]; then
-    # Video file - check if it exists
-    if [ ! -f "$CAMERA_INDEX" ]; then
-        echo -e "${RED}Error: Video file $CAMERA_INDEX not found.${NC}"
-        exit 1
-    fi
+    echo -e "${GREEN}Using video file: $CAMERA_INDEX${NC}"
 else
-    # Camera device - check if ffmpeg supports avfoundation
-    if ! ffmpeg -f avfoundation -list_devices true -i "" >/dev/null 2>&1; then
-        echo -e "${RED}Error: Camera device access not available. Check camera permissions.${NC}"
-        exit 1
-    fi
+    echo -e "${GREEN}Using camera device: $CAMERA_INDEX${NC}"
 fi
 
 # Check for ffmpeg
@@ -134,7 +128,7 @@ if [[ -f "$CAMERA_INDEX" ]]; then
 else
     # Camera device input
     echo -e "${BLUE}Using camera device: $CAMERA_INDEX${NC}"
-    INPUT_ARGS="-f avfoundation -pixel_format uyvy422 -framerate $INPUT_FPS -i $CAMERA_INDEX"
+    INPUT_ARGS="-f avfoundation -pixel_format uyvy422 -video_size $VIDEO_SIZE -framerate $INPUT_FPS -i $CAMERA_INDEX"
 fi
 
 # Start dual-output FFmpeg pipeline
