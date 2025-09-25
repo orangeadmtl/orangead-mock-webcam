@@ -43,7 +43,7 @@ runOnDisconnect:
 # Global settings -> Authentication
 
 # Authentication method. Available values are:
-# * internal: users are stored in the configuration file
+# * internal: credentials are stored in the configuration file
 # * http: an external HTTP URL is contacted to perform authentication
 # * jwt: an external identity server provides authentication through JWTs
 authMethod: internal
@@ -119,7 +119,7 @@ authHTTPExclude:
 #     }
 #   ]
 # }
-# Users are expected to pass the JWT in the Authorization header, password or query parameter.
+# Users are expected to pass the JWT in the Authorization header or as password.
 # This is the JWKS URL that will be used to pull (once) the public key that allows
 # to validate JWTs.
 authJWTJWKS:
@@ -135,7 +135,7 @@ authJWTClaimKey: mediamtx_permissions
 # Format is the same as the one of user permissions.
 authJWTExclude: []
 # allow passing the JWT through query parameters of HTTP requests (i.e. ?jwt=JWT).
-# This is a security risk.
+# This is a security risk and will be disabled by default in the future.
 authJWTInHTTPQuery: true
 
 ###############################################
@@ -438,6 +438,10 @@ pathDefaults:
   # * publisher -> the stream is provided by a RTSP, RTMP, WebRTC or SRT client
   # * rtsp://existing-url -> the stream is pulled from another RTSP server / camera
   # * rtsps://existing-url -> the stream is pulled from another RTSP server / camera with RTSPS
+  # * rtsp+http://existing-url -> the stream is pulled from another RTSP server / camera, with HTTP tunneling
+  # * rtsps+http://existing-url -> the stream is pulled from another RTSP server / camera, with HTTPS tunneling
+  # * rtsp+ws://existing-url -> the stream is pulled from another RTSP server / camera, with WebSocket tunneling
+  # * rtsps+ws://existing-url -> the stream is pulled from another RTSP server / camera, with secure WebSocket tunneling
   # * rtmp://existing-url -> the stream is pulled from another RTMP server / camera
   # * rtmps://existing-url -> the stream is pulled from another RTMP server / camera with RTMPS
   # * http://existing-url/stream.m3u8 -> the stream is pulled from another HLS server / camera
@@ -456,7 +460,7 @@ pathDefaults:
   # * $G1, $G2, ...: regular expression groups, if path name is
   #   a regular expression.
   source: publisher
-  # If the source is a URL, and the source certificate is self-signed
+  # If the source is a URL, and the source TLS certificate is self-signed
   # or invalid, you can provide the fingerprint of the certificate in order to
   # validate it anyway. It can be obtained by running:
   # openssl s_client -connect source_ip:source_port </dev/null 2>/dev/null | sed -n '/BEGIN/,/END/p' > server.crt
