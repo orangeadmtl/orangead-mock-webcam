@@ -165,6 +165,23 @@ echo "  Stop services:     ./stop.sh"
 echo "  RTSP stream URL:   rtsp://localhost:8554/webcam"
 echo "  Test with:         mpv rtsp://localhost:8554/webcam"
 
+# Generate LaunchAgent plist from template
+echo -e "${BLUE}Generating LaunchAgent plist...${NC}"
+if [ -f "com.orangead.mock-webcam.plist.template" ]; then
+    # Replace ~ with actual home directory path
+    HOME_PATH="$HOME"
+    sed "s|~|${HOME_PATH}|g" com.orangead.mock-webcam.plist.template > com.orangead.mock-webcam.plist
+    echo -e "${GREEN}✓ LaunchAgent plist generated: com.orangead.mock-webcam.plist${NC}"
+
+    # Add to .gitignore if not already present
+    if [ ! -f ".gitignore" ] || ! grep -q "com.orangead.mock-webcam.plist" .gitignore; then
+        echo "com.orangead.mock-webcam.plist" >> .gitignore
+        echo -e "${GREEN}✓ Added plist to .gitignore${NC}"
+    fi
+else
+    echo -e "${YELLOW}⚠ Template file com.orangead.mock-webcam.plist.template not found${NC}"
+fi
+
 # Check if config file exists
 if [ -f "mediamtx.yml" ]; then
     echo -e "${YELLOW}Configuration file: mediamtx.yml${NC}"

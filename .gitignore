@@ -1,2 +1,10 @@
+# Generated files
+com.orangead.mock-webcam.plist
+
+# MediaMTX binary
 ./mediamtx
 mediamtx
+
+# Temporary files
+/tmp/
+*.log

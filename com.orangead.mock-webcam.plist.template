@@ -6,16 +6,16 @@
     <string>com.orangead.mock-webcam</string>
 
     <key>Program</key>
-    <string>/Users/admin/orangead/orangead-mock-webcam/start-dual-osascript.sh</string>
+    <string>~/orangead/orangead-mock-webcam/start-dual-osascript.sh</string>
 
     <key>WorkingDirectory</key>
-    <string>/Users/admin/orangead/orangead-mock-webcam</string>
+    <string>~/orangead/orangead-mock-webcam</string>
 
     <key>StandardOutPath</key>
-    <string>/Users/admin/logs/mock-webcam.log</string>
+    <string>~/logs/mock-webcam.log</string>
 
     <key>StandardErrorPath</key>
-    <string>/Users/admin/logs/mock-webcam.error.log</string>
+    <string>~/logs/mock-webcam.error.log</string>
 
     <key>RunAtLoad</key>
     <true/>
@@ -27,10 +27,6 @@
     <dict>
         <key>PATH</key>
         <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin</string>
-        <key>HOME</key>
-        <string>/Users/admin</string>
-        <key>USER</key>
-        <string>admin</string>
     </dict>
 
     <key>LimitLoadToSessionType</key>
@@ -43,12 +39,6 @@
 
     <key>ExitTimeOut</key>
     <integer>30</integer>
-
-    <key>StandardOutPath</key>
-    <string>/Users/admin/orangead/logs/mock-webcam.log</string>
-
-    <key>StandardErrorPath</key>
-    <string>/Users/admin/orangead/logs/mock-webcam.error.log</string>
 
 </dict>
 </plist>
