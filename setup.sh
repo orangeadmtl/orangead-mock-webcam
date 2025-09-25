@@ -115,39 +115,43 @@ if [ -f "./mediamtx" ]; then
     
     if [ "$CURRENT_VERSION" = "$VERSION" ]; then
         echo -e "${GREEN}MediaMTX is already up to date!${NC}"
-        exit 0
+        # Continue with plist generation even if MediaMTX is up to date
+        SKIP_DOWNLOAD=true
     elif [ "$CURRENT_VERSION" != "unknown" ]; then
         echo -e "${YELLOW}Updating from $CURRENT_VERSION to $VERSION${NC}"
     fi
 fi
 
-# Construct download URL
-FILENAME="mediamtx_${VERSION}_${OS}_${ARCH}.${FILE_EXT}"
-DOWNLOAD_URL="https://github.com/bluenviron/mediamtx/releases/download/${VERSION}/${FILENAME}"
+# Download and install MediaMTX if needed
+if [ "$SKIP_DOWNLOAD" != "true" ]; then
+    # Construct download URL
+    FILENAME="mediamtx_${VERSION}_${OS}_${ARCH}.${FILE_EXT}"
+    DOWNLOAD_URL="https://github.com/bluenviron/mediamtx/releases/download/${VERSION}/${FILENAME}"
 
-echo "Download URL: $DOWNLOAD_URL"
+    echo "Download URL: $DOWNLOAD_URL"
 
-# Download the file
-echo "Downloading $FILENAME..."
-if ! curl -L -o "/tmp/$FILENAME" "$DOWNLOAD_URL"; then
-    echo -e "${RED}Error: Failed to download MediaMTX${NC}"
-    exit 1
-fi
+    # Download the file
+    echo "Downloading $FILENAME..."
+    if ! curl -L -o "/tmp/$FILENAME" "$DOWNLOAD_URL"; then
+        echo -e "${RED}Error: Failed to download MediaMTX${NC}"
+        exit 1
+    fi
 
-# Extract the file to current directory
-echo "Extracting..."
-tar -xzf "/tmp/$FILENAME" -C .
+    # Extract the file to current directory
+    echo "Extracting..."
+    tar -xzf "/tmp/$FILENAME" -C .
 
-# Clean up
-rm "/tmp/$FILENAME"
-rm -f LICENSE
+    # Clean up
+    rm "/tmp/$FILENAME"
+    rm -f LICENSE
 
-# Make mediamtx executable
-if [ -f "mediamtx" ]; then
-    chmod +x mediamtx
-else
-    echo -e "${RED}Error: mediamtx binary not found after extraction${NC}"
-    exit 1
+    # Make mediamtx executable
+    if [ -f "mediamtx" ]; then
+        chmod +x mediamtx
+    else
+        echo -e "${RED}Error: mediamtx binary not found after extraction${NC}"
+        exit 1
+    fi
 fi
 
 echo -e "${GREEN}Setup Complete!${NC}"
