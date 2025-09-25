@@ -8,19 +8,25 @@ NC='\033[0m' # No Color
 
 echo -e "${YELLOW}Stopping OrangeAd Mock Webcam Services...${NC}"
 
-# Kill MediaMTX processes
-if pkill -f mediamtx 2>/dev/null; then
-    echo -e "${GREEN}✓ MediaMTX stopped${NC}"
+# Force kill MediaMTX processes
+if pgrep -f mediamtx > /dev/null; then
+    pkill -9 -f mediamtx
+    echo -e "${GREEN}✓ MediaMTX force killed${NC}"
 else
     echo -e "${YELLOW}⚠ No MediaMTX processes found${NC}"
 fi
 
-# Kill FFmpeg processes
-if pkill -f ffmpeg 2>/dev/null; then
-    echo -e "${GREEN}✓ FFmpeg stopped${NC}"
+# Force kill FFmpeg processes
+if pgrep -f ffmpeg > /dev/null; then
+    pkill -9 -f ffmpeg
+    echo -e "${GREEN}✓ FFmpeg force killed${NC}"
 else
     echo -e "${YELLOW}⚠ No FFmpeg processes found${NC}"
 fi
+
+# Clean up any remaining processes
+pkill -9 ffmpeg 2>/dev/null || true
+pkill -9 mediamtx 2>/dev/null || true
 
 # Check if any processes are still running
 if pgrep -f "mediamtx|ffmpeg" >/dev/null 2>&1; then

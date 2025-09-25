@@ -31,10 +31,20 @@ echo -e "  RTSP Stream: rtsp://localhost:${RTSP_PORT}/${STREAM_NAME}"
 echo -e "  Frame Output: $FRAME_DIR (${FRAME_FPS} FPS)"
 echo -e "  Frame Quality: $FRAME_QUALITY"
 
-# Check for MediaMTX binary
+# Check for MediaMTX binary and auto-setup if missing
 if [ ! -f "./mediamtx" ]; then
-    echo -e "${RED}Error: MediaMTX not found. Run ./setup.sh first.${NC}"
-    exit 1
+    echo -e "${YELLOW}MediaMTX binary not found. Running automatic setup...${NC}"
+    if [ -f "./setup.sh" ]; then
+        ./setup.sh
+        if [ ! -f "./mediamtx" ]; then
+            echo -e "${RED}Error: Setup failed to install MediaMTX binary.${NC}"
+            exit 1
+        fi
+        echo -e "${GREEN}✓ MediaMTX installed successfully${NC}"
+    else
+        echo -e "${RED}Error: setup.sh not found. Cannot auto-install MediaMTX.${NC}"
+        exit 1
+    fi
 fi
 
 # Input source validation
@@ -82,8 +92,8 @@ echo -e "${GREEN}✓ Background cleanup started (keeping latest 10000 files)${NC
 pkill -f mediamtx 2>/dev/null || true
 pkill -f ffmpeg 2>/dev/null || true
 
-echo -e "${BLUE}Starting MediaMTX server...${NC}"
-./mediamtx &
+echo -e "${BLUE}Starting MediaMTX server with mediamtx.yml config...${NC}"
+./mediamtx mediamtx.yml &
 MEDIAMTX_PID=$!
 
 # Function to cleanup on exit
