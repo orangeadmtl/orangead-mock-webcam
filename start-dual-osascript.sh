@@ -15,19 +15,36 @@ echo -e "${GREEN}OrangeAd Mock Webcam - osascript Wrapper${NC}"
 
 # Get script directory
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-
-# Fixed configuration for 1280x720@10fps
-export CAMERA_INDEX="0"
-export RTSP_PORT="8554"
-export FRAME_DIR="/tmp/webcam"
-export FRAME_FPS="5"
-export STREAM_NAME="webcam"
-export INPUT_FPS="10"
-export VIDEO_SIZE="1280x720"
-
-echo -e "${BLUE}Configuration: $VIDEO_SIZE @ ${INPUT_FPS}fps${NC}"
-
 cd "$SCRIPT_DIR"
+
+# Load configuration from config.conf
+CONFIG_FILE="$SCRIPT_DIR/config.conf"
+
+if [ ! -f "$CONFIG_FILE" ]; then
+    echo -e "${RED}Error: Configuration file not found: $CONFIG_FILE${NC}"
+    exit 1
+fi
+
+echo -e "${BLUE}Loading configuration from: $CONFIG_FILE${NC}"
+
+# Source the configuration file (simple and fast)
+source "$CONFIG_FILE"
+
+# Validate loaded configuration
+if [ -z "$CAMERA_INDEX" ] || [ -z "$RTSP_PORT" ] || [ -z "$FRAME_DIR" ] || [ -z "$FRAME_FPS" ] || [ -z "$STREAM_NAME" ] || [ -z "$INPUT_FPS" ] || [ -z "$VIDEO_SIZE" ]; then
+    echo -e "${RED}Error: Failed to load required configuration values${NC}"
+    echo -e "${YELLOW}Loaded values:${NC}"
+    echo -e "  CAMERA_INDEX: '$CAMERA_INDEX'"
+    echo -e "  RTSP_PORT: '$RTSP_PORT'"
+    echo -e "  FRAME_DIR: '$FRAME_DIR'"
+    echo -e "  FRAME_FPS: '$FRAME_FPS'"
+    echo -e "  STREAM_NAME: '$STREAM_NAME'"
+    echo -e "  INPUT_FPS: '$INPUT_FPS'"
+    echo -e "  VIDEO_SIZE: '$VIDEO_SIZE'"
+    exit 1
+fi
+
+echo -e "${BLUE}Configuration loaded: $VIDEO_SIZE @ ${INPUT_FPS}fps → RTSP:${RTSP_PORT} + Frames:${FRAME_DIR}@${FRAME_FPS}fps${NC}"
 
 # Make sure start-dual.sh is executable
 chmod +x start-dual.sh
