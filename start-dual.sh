@@ -14,7 +14,30 @@ NC='\033[0m' # No Color
 echo -e "${GREEN}OrangeAd Mock Webcam - Dual Output Mode${NC}"
 echo -e "${BLUE}Architecture: Video → FFmpeg → [RTSP Stream + Detection Frames]${NC}"
 
-# Configuration - Default to USB camera on Mac
+# Load configuration from config.conf or use environment variables as fallback
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+CONFIG_FILE="$SCRIPT_DIR/config.conf"
+
+# Load configuration values with fallbacks to environment variables or defaults
+if [ -f "$CONFIG_FILE" ]; then
+    echo -e "${BLUE}Loading configuration from: $CONFIG_FILE${NC}"
+    # Source the config file, but preserve any existing environment variables
+    while IFS='=' read -r key value; do
+        # Skip comments and empty lines
+        [[ $key =~ ^[[:space:]]*# ]] && continue
+        [[ -z "$key" ]] && continue
+
+        # Remove quotes from value if present
+        value=$(echo "$value" | sed 's/^"//;s/"$//')
+
+        # Only set if not already set in environment
+        eval "export $key=\${$key:-$value}"
+    done < "$CONFIG_FILE"
+else
+    echo -e "${YELLOW}Config file not found, using environment variables or defaults${NC}"
+fi
+
+# Final fallback to hardcoded defaults
 CAMERA_INDEX=${CAMERA_INDEX:-"0"}
 RTSP_PORT=${RTSP_PORT:-8554}
 FRAME_DIR=${FRAME_DIR:-"/tmp/webcam"}
@@ -23,6 +46,9 @@ STREAM_NAME=${STREAM_NAME:-"webcam"}
 FRAME_QUALITY=${FRAME_QUALITY:-95}
 INPUT_FPS=${INPUT_FPS:-10}
 VIDEO_SIZE=${VIDEO_SIZE:-"1280x720"}
+MAX_FILES=${MAX_FILES:-10000}
+CLEANUP_INTERVAL=${CLEANUP_INTERVAL:-1}
+STARTUP_TIMEOUT=${STARTUP_TIMEOUT:-30}
 
 echo -e "${BLUE}Configuration:${NC}"
 echo -e "  Input: $CAMERA_INDEX"
@@ -70,23 +96,23 @@ fi
 mkdir -p "$FRAME_DIR"
 echo -e "${GREEN}✓ Frame directory created: $FRAME_DIR${NC}"
 
-# Start background cleanup process to keep only latest 10000 files
-echo -e "${BLUE}Starting background cleanup process...${NC}"
+# Start background cleanup process to keep only latest N files
+echo -e "${BLUE}Starting background cleanup process (keeping latest $MAX_FILES files)...${NC}"
 (
     while true; do
-        sleep 1
+        sleep $CLEANUP_INTERVAL
         if [ -d "$FRAME_DIR" ]; then
-            # Count files and remove oldest if more than 10000
+            # Count files and remove oldest if more than MAX_FILES
             file_count=$(find "$FRAME_DIR" -type f -name "*.webp" | wc -l)
-            if [ "$file_count" -gt 10000 ]; then
-                files_to_remove=$((file_count - 10000))
+            if [ "$file_count" -gt "$MAX_FILES" ]; then
+                files_to_remove=$((file_count - MAX_FILES))
                 find "$FRAME_DIR" -type f -name "*.webp" -printf '%T@ %p\n' | sort -n | head -n "$files_to_remove" | cut -d' ' -f2- | xargs rm -f
             fi
         fi
     done
 ) &
 CLEANUP_PID=$!
-echo -e "${GREEN}✓ Background cleanup started (keeping latest 10000 files)${NC}"
+echo -e "${GREEN}✓ Background cleanup started (keeping latest $MAX_FILES files)${NC}"
 
 # Kill any existing MediaMTX or FFmpeg processes
 pkill -f mediamtx 2>/dev/null || true
@@ -110,15 +136,15 @@ cleanup() {
 trap cleanup EXIT INT TERM
 
 # Wait for MediaMTX to start
-echo -e "${BLUE}Waiting for MediaMTX to start...${NC}"
-timeout=30
+echo -e "${BLUE}Waiting for MediaMTX to start (timeout: ${STARTUP_TIMEOUT}s)...${NC}"
+timeout=$((STARTUP_TIMEOUT * 2))  # Convert to half-second intervals
 while ! nc -z localhost $RTSP_PORT && [ $timeout -gt 0 ]; do
     sleep 0.5
     timeout=$((timeout - 1))
 done
 
 if [ $timeout -eq 0 ]; then
-    echo -e "${RED}Error: MediaMTX failed to start within 15 seconds${NC}"
+    echo -e "${RED}Error: MediaMTX failed to start within ${STARTUP_TIMEOUT} seconds${NC}"
     exit 1
 fi
 
